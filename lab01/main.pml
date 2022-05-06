@@ -60,7 +60,7 @@ proctype Sender(chan ch; int msgCount)
             printf("SENDER:: ACK received, waiting for CLS\n");
             ch ? CLS, recvbit;
             ch ! ACK, recvbit;
-            printf("SENDER: ACK received, clean close\n");
+            printf("SENDER: CLS received, clean close\n");
         :: else -> printf("SENDER: ACK received, invalid verification number, dirty close\n");
         fi
         break;
@@ -73,20 +73,27 @@ proctype Receiver(chan ch)
 {
     byte sendbyte, recvbyte;
 
-    printf("Run receiver, pid=%d\n", _pid);
+    printf("RECEIVER: running, pid=%d\n", _pid);
 
+    printf("RECEIVER: waiting for EST\n");
     ch ? EST, recvbyte;
+    printf("RECEIVER: EST received, sending ACK\n");
     ch ! ACK, recvbyte;
     rand(sendbyte);
+    printf("RECEIVER: sending EST\n");
     ch ! EST, sendbyte;
+    printf("RECEIVER: waiting for ACK\n");
     ch ? ACK, recvbyte;
 
     if
     :: recvbyte == sendbyte ->
+      printf("RECEIVER: connection established, waiting for incoming MSG\n");
       do
       :: ch ? MSG, recvbyte -> 
+        printf("RECEIVER: MSG received with code %d\n", recvbyte);
         ch ! ACK, recvbyte;
       :: ch ? CLS, recvbyte ->
+        printf("RECEIVER: CLS received, closing connection ...\n");
         ch ! ACK, recvbyte;
         rand(sendbyte);
         ch ! CLS, sendbyte;
